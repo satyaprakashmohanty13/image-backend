@@ -12,7 +12,7 @@ import struct
 app = Flask(__name__)
 CORS(app, origins=["https://satyaprakashmohanty13.github.io"])
 
-# AES encrypt/decrypt helpers
+# AES encryption
 def encrypt_message(message, password):
     key = password.ljust(32, '0')[:32].encode()
     iv = os.urandom(16)
@@ -23,6 +23,7 @@ def encrypt_message(message, password):
     encrypted = encryptor.update(padded) + encryptor.finalize()
     return iv + encrypted
 
+# AES decryption
 def decrypt_message(data, password):
     key = password.ljust(32, '0')[:32].encode()
     iv, ciphertext = data[:16], data[16:]
@@ -32,7 +33,7 @@ def decrypt_message(data, password):
     unpadder = padding.PKCS7(128).unpadder()
     return (unpadder.update(decrypted) + unpadder.finalize()).decode()
 
-# Hide message in LSB
+# Encode data into image
 def encode_image(image_bytes, message_bytes):
     image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
     pixels = list(image.getdata())
@@ -62,6 +63,7 @@ def encode_image(image_bytes, message_bytes):
     output.seek(0)
     return output
 
+# Decode data from image
 def decode_image(image_bytes):
     image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
     pixels = list(image.getdata())
@@ -76,6 +78,7 @@ def decode_image(image_bytes):
     data = bytes(byte_data[4:4+length])
     return data
 
+# Routes
 @app.route('/encode', methods=['POST'])
 def encode():
     try:
@@ -99,5 +102,7 @@ def decode():
     except Exception as e:
         return jsonify({'error': 'Decoding failed', 'detail': str(e)}), 500
 
+# Run on Render-compatible host/port
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
